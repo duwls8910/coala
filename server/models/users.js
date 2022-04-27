@@ -12,6 +12,7 @@ module.exports = (sequelize, DataTypes) => {
       this.hasMany(models.posts, {
         foreignKey: 'userId',
         sourceKey: 'id',
+        as: 'userInfo',
       });
       this.hasMany(models.like, {
         foreignKey: 'userId',
@@ -28,6 +29,7 @@ module.exports = (sequelize, DataTypes) => {
       this.hasMany(models.post_comment, {
         foreignKey: 'userId',
         sourceKey: 'id',
+        as: 'userinfo',
       });
     }
   }

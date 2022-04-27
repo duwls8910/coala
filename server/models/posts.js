@@ -10,16 +10,19 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       this.belongsTo(models.users, {
-        foreignKey: 'userId',
+        foreignKey: 'userId', // posts 의 userId
         sourceKey: 'id',
+        as: 'userInfo',
       });
       this.hasMany(models.like, {
         foreignKey: 'postId',
         sourceKey: 'id',
+        as: 'likers',
       });
       this.hasMany(models.post_comment, {
         foreignKey: 'postId',
         sourceKey: 'id',
+        as: 'comments',
       });
     }
   }
@@ -49,10 +52,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      // chatroomId: {
-      //   type: DataTypes.INTEGER,
-      //   allowNull: false,
-      // },
+      chatroomId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
       done: { type: DataTypes.BOOLEAN, defaultValue: 0 },
     },
     {

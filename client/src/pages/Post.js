@@ -84,7 +84,6 @@ function Post() {
   const [tag, setTag] = useState(null);
   const [innerWidth, setInnerWidth] = useState(MView);
   const [content, setContent] = useState('');
-  const [thumbnail, setThumbnail] = useState(null);
   const editorRef = useRef();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -100,33 +99,45 @@ function Post() {
     setContent(editorRef.current.getInstance().getMarkdown() || '');
   };
 
+  useEffect(() => {
+    if (postContentMutation.isSuccess) {
+      console.log(postContentMutation.data);
+    } else if (postContentMutation.isError) {
+      dispatch({
+        type: SET_ERROR_MESSAGE,
+        data: '포스트 작성 실패.',
+      });
+    }
+  }, [postContentMutation.status]);
   const handleSubmit = e => {
     e.preventDefault();
     if (title && tag && editorRef.current) {
       const des = JSON.stringify(
         editorRef.current.getInstance().getHTML(),
       ).replace(/<[^>]*>?/g, '');
-
       // 첫번째 이미지를 썸네일로 지정.
-      const tumb = JSON.stringify(
+      let tumb = JSON.stringify(
         editorRef.current.getInstance().getHTML(),
       ).split(`<img src=`);
       if (tumb.length > 1) {
-        setThumbnail(
-          tumb[1].split(' ')[0].substring(2, tumb[1].split(' ')[0].length - 2),
-        );
+        tumb = tumb[1]
+          .split(' ')[0]
+          .substring(2, tumb[1].split(' ')[0].length - 2);
+      } else {
+        tumb = null;
       }
-
-      const description = `${des.substring(1, 150)}...`;
+      let description = des.substring(1, des.length - 1);
+      if (des.length > 150) {
+        description = `${des.substring(1, 150)}...`;
+      }
       const contentInfo = {
         userId: userInfo.id,
         title,
         stack: tag.stack,
         content: editorRef.current.getInstance().getHTML(),
-        thumbnail,
+        thumbnail: tumb,
         description,
       };
-      // console.log(contentInfo);
       postContentMutation.mutate(contentInfo);
     } else {
       dispatch({

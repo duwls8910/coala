@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Redirect } from 'react-router-dom';
 import './App.css';
 import 'antd/dist/antd.min.css';
 import { useSelector } from 'react-redux';
@@ -20,7 +20,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/write" element={<Post />} />
-        <Route path="/content/detail" element={<ContentDetail />} />
+        <Route path="/content/:contentId" element={<ContentDetail />} />
       </Routes>
     </div>
   );

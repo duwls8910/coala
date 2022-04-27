@@ -1,27 +1,27 @@
-const { posts, like } = require('../../models');
+const { users, posts, like, chatrooms, post_comment } = require('../../models');
 module.exports = {
   write: async (req, res) => {
     // 컨텍츠 작성
     const { userId, title, content, stack, thumbnail, description } = req.body;
-    if (
-      // user_id는 필수값 없으면 400 //db에서도 null안받게
-      userId === undefined ||
-      userId === '' ||
-      title === undefined ||
-      title === '' ||
-      content === undefined ||
-      content === '' ||
-      stack === undefined ||
-      stack === ''
-      // chatroomId === undefined ||
-      // chatroomId === ''
-    ) {
+    if (!title || !content || !stack || !description || !userId) {
       res.status(400).send({ message: 'Invalid request' });
     } else {
-      await posts // User_id = 로그인 유저의 pk id 받음
-        .create({ userId, title, content, stack, thumbnail, description }) // chatroomId
+      const chatroom = await chatrooms.create({ userId });
+      await posts
+        .create({
+          userId,
+          title,
+          content,
+          stack,
+          thumbnail,
+          description,
+          chatroomId: chatroom.dataValues.id,
+        })
         .then((data) => {
-          res.status(200).send({ message: 'post is saved' });
+          res.status(200).send({
+            message: 'post is saved',
+            data: { contentId: data.dataValues.id },
+          });
         })
         .catch((err) => {
           console.log(err);
@@ -58,14 +58,7 @@ module.exports = {
     const { title, content, stack } = req.body;
     if (req.params.postId) {
       // 파라미터가 없으면 400 있으면 200
-      if (
-        title === undefined ||
-        title === '' ||
-        content === undefined ||
-        content === '' ||
-        stack === undefined ||
-        stack === ''
-      ) {
+      if (!title || !content || !stack) {
         res.status(400).send({ message: 'Invalid request' });
       } else {
         await posts
@@ -121,10 +114,72 @@ module.exports = {
       res.send();
     }
   },
-  post: (req, res) => {
+  post: async (req, res) => {
     // 컨텐츠 작성정보 가져오기
+    const { postId } = req.params;
+    if (postId) {
+      await posts
+        .findOne({
+          where: { id: postId },
+          include: [
+            {
+              model: users,
+              required: true,
+              as: 'userInfo',
+              attributes: ['id', 'username', 'profile'],
+            },
+            {
+              model: like,
+              as: 'likers',
+              attributes: ['userId'],
+            },
+            // 코멘트 뒤집어서
+            {
+              model: post_comment,
+              as: 'comments',
+              attributes: ['postId', 'userId', 'comment', 'createdAt'],
+              include: [
+                {
+                  model: users,
+                  as: 'userinfo',
+                  required: true,
+                  attributes: ['username', 'profile'],
+                },
+              ],
+            },
+          ],
+          order: [[{ model: post_comment, as: 'comments' }, 'id', 'DESC']],
+        })
+        .then((data) => {
+          res.status(200).send(data);
+        });
+    } else {
+      // 예외 처리 다시 확인할것
+      res.status(400).send({ message: 'Invalid request' });
+    }
   },
-  comment: (req, res) => {
+  comment: async (req, res) => {
     // 댓글 작성
+    const { userId, comment, postId } = req.body;
+    if (!postId || !comment || !userId) {
+      res.status(400).send({ message: 'Invalid request' });
+    } else {
+      await post_comment
+        .create({
+          userId,
+          comment,
+          postId,
+        })
+        .then((data) => {
+          res
+            .status(200)
+            .send({ message: 'comment is saved', data: { commentId: data } });
+        });
+    }
+  },
+  commentRemove: async (req, res) => {
+    // 댓글 삭제
+    // 작성한 유저의 경우에만 삭제 가능
+    // 유저 아이디랑 코멘트아이디를
   },
 };
