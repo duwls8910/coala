@@ -1,49 +1,47 @@
 'use strict';
 const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class like extends Model {
+  class chatrooms extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
-      this.belongsTo(models.posts, {
-        foreignKey: 'postId',
+      this.hasMany(models.chattings, {
+        foreignKey: 'chatroomId',
         sourceKey: 'id',
-        as: 'likers',
       });
-      this.belongsTo(models.users, {
-        foreignKey: 'userId',
+      this.hasMany(models.user_chatrooms, {
+        foreignKey: 'chatroomId',
         sourceKey: 'id',
       });
     }
   }
-  like.init(
+  chatrooms.init(
     {
       userId: DataTypes.INTEGER,
-      postId: DataTypes.INTEGER,
     },
     {
       sequelize,
-      modelName: 'like',
+      modelName: 'chatrooms',
     },
   );
-  return like;
+  return chatrooms;
 };
 /**
  * @swagger
  *  components:
  *    schemas:
- *      Like:
+ *      chatrooms:
  *        type: object
  *        required:
+ *          - id
  *          - userId
- *          - postId
  *        properties:
+ *          id:
+ *            type: integer
  *          userId:
  *            type: integer
- *          postId:
- *            type: integer
+
  */

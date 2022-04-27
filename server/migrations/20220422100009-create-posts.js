@@ -8,7 +8,7 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      userid: {
+      userId: {
         type: Sequelize.INTEGER,
         allowNull: false,
       },
@@ -16,10 +16,19 @@ module.exports = {
         type: Sequelize.STRING,
       },
       content: {
+        type: Sequelize.TEXT,
+      },
+      thumbnail: {
         type: Sequelize.STRING,
       },
-      category: {
+      description: {
         type: Sequelize.STRING,
+      },
+      stack: {
+        type: Sequelize.STRING,
+      },
+      chatroomId: {
+        type: Sequelize.INTEGER,
       },
       done: {
         type: Sequelize.BOOLEAN,

@@ -10,21 +10,54 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       this.hasMany(models.posts, {
-        foreignKey: 'userid',
+        foreignKey: 'userId',
         sourceKey: 'id',
+        as: 'userInfo',
       });
       this.hasMany(models.like, {
-        foreignKey: 'user_id',
+        foreignKey: 'userId',
         sourceKey: 'id',
+      });
+      this.hasMany(models.chattings, {
+        foreignKey: 'userId',
+        sourceKey: 'id',
+      });
+      this.hasMany(models.user_chatrooms, {
+        foreignKey: 'userId',
+        sourceKey: 'id',
+      });
+      this.hasMany(models.post_comment, {
+        foreignKey: 'userId',
+        sourceKey: 'id',
+        as: 'userinfo',
       });
     }
   }
   users.init(
     {
-      username: DataTypes.STRING,
-      profile: DataTypes.STRING,
-      email: DataTypes.STRING,
-      password: DataTypes.STRING,
+      username: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      profile: {
+        type: DataTypes.STRING,
+        defaultValue: null,
+      },
+      email: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          isEmail: true,
+        },
+      },
+      password: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      salt: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
     },
     {
       sequelize,
@@ -54,5 +87,7 @@ module.exports = (sequelize, DataTypes) => {
  *            format: email
  *            description: Email for the user, needs to be unique.
  *          password:
+ *            type: string
+ *          slat:
  *            type: string
  */

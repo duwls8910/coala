@@ -10,22 +10,53 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       this.belongsTo(models.users, {
-        foreignKey: 'userid',
+        foreignKey: 'userId', // posts 의 userId
         sourceKey: 'id',
+        as: 'userInfo',
       });
       this.hasMany(models.like, {
-        foreignKey: 'content_id',
+        foreignKey: 'postId',
         sourceKey: 'id',
+        as: 'likers',
+      });
+      this.hasMany(models.post_comment, {
+        foreignKey: 'postId',
+        sourceKey: 'id',
+        as: 'comments',
       });
     }
   }
   posts.init(
     {
-      userid: DataTypes.INTEGER,
-      title: DataTypes.STRING,
-      content: DataTypes.STRING,
-      category: DataTypes.STRING,
-      done: DataTypes.BOOLEAN,
+      userId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      title: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      content: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+      },
+      thumbnail: {
+        type: DataTypes.STRING,
+        defaultValue: null,
+      },
+      description: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      stack: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      chatroomId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      done: { type: DataTypes.BOOLEAN, defaultValue: 0 },
     },
     {
       sequelize,
@@ -34,3 +65,37 @@ module.exports = (sequelize, DataTypes) => {
   );
   return posts;
 };
+
+/**
+ * @swagger
+ *  components:
+ *    schemas:
+ *      Post:
+ *        type: object
+ *        required:
+ *          - userId
+ *          - title
+ *          - content
+ *          - thumbnail
+ *          - description
+ *          - stack
+ *          - chatroomId
+ *          - done
+ *        properties:
+ *          userId:
+ *            type: integer
+ *          title:
+ *            type: string
+ *          content:
+ *            type: text
+ *          thumbnail:
+ *            type: string
+ *          description:
+ *            type: string
+ *          stack:
+ *            type: string
+ *          chatroomId:
+ *            type: integer
+ *          done:
+ *            type: boolean
+ */

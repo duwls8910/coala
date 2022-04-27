@@ -1,7 +1,7 @@
 'use strict';
 const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class like extends Model {
+  class user_chatrooms extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -9,41 +9,41 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      this.belongsTo(models.posts, {
-        foreignKey: 'postId',
-        sourceKey: 'id',
-        as: 'likers',
-      });
       this.belongsTo(models.users, {
         foreignKey: 'userId',
         sourceKey: 'id',
       });
+      this.belongsTo(models.chatrooms, {
+        foreignKey: 'chatroomId',
+        sourceKey: 'id',
+      });
     }
   }
-  like.init(
+  user_chatrooms.init(
     {
       userId: DataTypes.INTEGER,
-      postId: DataTypes.INTEGER,
+      chatroomId: DataTypes.INTEGER,
     },
     {
       sequelize,
-      modelName: 'like',
+      modelName: 'user_chatrooms',
     },
   );
-  return like;
+  return user_chatrooms;
 };
 /**
  * @swagger
  *  components:
  *    schemas:
- *      Like:
+ *      user_chatrooms:
  *        type: object
  *        required:
+ *          - chatroomId
  *          - userId
- *          - postId
  *        properties:
+ *          chatroomId:
+ *            type: integer
  *          userId:
  *            type: integer
- *          postId:
- *            type: integer
+
  */
