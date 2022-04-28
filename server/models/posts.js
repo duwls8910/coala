@@ -24,6 +24,10 @@ module.exports = (sequelize, DataTypes) => {
         sourceKey: 'id',
         as: 'comments',
       });
+      this.hasMany(models.chattings, {
+        foreignKey: 'chatroomId',
+        sourceKey: 'id',
+      });
     }
   }
   posts.init(
@@ -52,10 +56,6 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      chatroomId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      },
       done: { type: DataTypes.BOOLEAN, defaultValue: 0 },
     },
     {
@@ -73,14 +73,15 @@ module.exports = (sequelize, DataTypes) => {
  *      Post:
  *        type: object
  *        required:
- *          - user_id
+ *          - userId
  *          - title
  *          - content
+ *          - thumbnail
+ *          - description
  *          - stack
- *          - chatroomId
  *          - done
  *        properties:
- *          user_id:
+ *          userId:
  *            type: integer
  *          title:
  *            type: string
@@ -92,8 +93,6 @@ module.exports = (sequelize, DataTypes) => {
  *            type: string
  *          stack:
  *            type: string
- *          chatroomId:
- *            type: integer
  *          done:
  *            type: boolean
  */

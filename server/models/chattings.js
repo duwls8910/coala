@@ -17,6 +17,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'chatroomId',
         sourceKey: 'id',
       });
+      this.belongsTo(models.posts, {
+        foreignKey: 'chatroomId',
+        sourceKey: 'id',
+      });
     }
   }
   chattings.init(
@@ -32,3 +36,22 @@ module.exports = (sequelize, DataTypes) => {
   );
   return chattings;
 };
+
+/**
+ * @swagger
+ *  components:
+ *    schemas:
+ *      chattings:
+ *        type: object
+ *        required:
+ *          - userId
+ *          - chatroomId
+ *          - content
+ *        properties:
+ *          userId:
+ *            type: integer
+ *          chatroomId:
+ *            type: integer
+ *          content:
+ *            type: string
+ */
