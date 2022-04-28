@@ -41,3 +41,4 @@ app.use('/admin', adminRouter);
 app.listen(port, () => {
   console.log(`현재 ${port}에서 서버 가동 중`);
 });
+// socket.io
