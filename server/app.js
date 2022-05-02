@@ -46,11 +46,14 @@ const port = 4000;
 const socketIO = require('socket.io');
 const io = socketIO(server, {
   cors: {
-    origin: ['http://localhost:3000'],
+    origin: true,
     methods: ['GET', 'POST'],
     credentials: true,
   },
+  // pingInterval: 10000000000,
+  // pingTimeout: 5000000000,
 });
+// io.set('transports', [ 'websocket', 'flashsocket', 'polling' ] );
 
 const { chattings } = require('./models');
 
@@ -71,16 +74,18 @@ io.on('connection', (socket) => {
       User with ID: ${socket.id} joined room: ${data}
 -----------------------------------------------------`,
     );
-    console.log(`11111`, io.sockets);
+    // console.log(`11111`, io.sockets);
   });
 
   socket.on('send_message', async (data) => {
-    // console.log(data);
+    console.log(data);
     socket.to(data.room).emit('receive_message', data);
     await chattings.create({
       userId: data.userId,
       chatroomId: data.room,
       content: data.message,
+      image: data.image,
+      time: data.time,
     });
   });
 

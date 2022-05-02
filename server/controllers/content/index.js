@@ -161,7 +161,7 @@ module.exports = {
             },
             {
               model: chattings,
-              attributes: ['userId', 'content'],
+              attributes: ['id', 'userId', 'content', 'image', 'time'],
               include: [
                 {
                   model: users,
@@ -170,9 +170,12 @@ module.exports = {
               ],
             },
           ],
-          order: [[{ model: post_comment, as: 'comments' }, 'id', 'DESC']],
+          order: [
+            [{ model: post_comment, as: 'comments' }, 'id', 'DESC'],
+            [{ model: chattings }, 'id', 'ASC'],
+          ],
         })
-        .then(async (data) => {
+        .then((data) => {
           // const post = [data].map((el) => el.get({ plain: true }));
           // for (let i = 0; i < post[0].likers.length; i++) {
           //   post[0].likers[i] = post[0].likers[i].userId;
@@ -193,7 +196,6 @@ module.exports = {
   },
   comment: async (req, res) => {
     // 댓글 작성
-    console.log(1111);
     const { userId, comment, postId } = req.body;
     if (!postId || !comment || !userId) {
       res.status(400).send({ message: 'Invalid request' });
