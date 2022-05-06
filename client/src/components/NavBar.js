@@ -4,6 +4,10 @@ import styled from 'styled-components';
 import { Divider } from 'antd';
 import { XLView, LView, MView, SView, CoalaGreen } from '../config';
 import StackMore from './StackMore';
+import { getfilterContentsAPI, getContentsAPI } from '../api/content';
+import { useQuery } from 'react-query';
+import { useDispatch } from 'react-redux';
+import { LOAD_CONTENTS_SUCCESS } from '../reducer/content';
 
 const Menu = styled.div`
   margin: auto;
@@ -55,18 +59,67 @@ const DividerCustom = styled(Divider)`
 
 function NavBar() {
   const [MenuList, setMenuList] = useState(false);
+  const [done, setDone] = useState(null);
+  const dispatch = useDispatch();
+  const { data: contentsData } = useQuery('contents', getContentsAPI, {
+    enabled: done === null,
+    refetchOnWindowFocus: false, // react-query는 사용자가 사용하는 윈도우가 다른 곳을 갔다가 다시 화면으로 돌아오면 이 함수를 재실행합니다. 그 재실행 여부 옵션 입니다.
+    retry: 0, // 실페시 재실행 여부
+  });
+
+  const { data: filterDoneContents } = useQuery(
+    ['filterDoneContents', done],
+    () => getfilterContentsAPI({ done }),
+    {
+      enabled: done !== null,
+      refetchOnWindowFocus: false,
+    },
+  );
+
+  const handleAll = () => {
+    setDone(null);
+  };
+  const handleDone = () => {
+    setDone(1);
+  };
+
+  const handleResolving = () => {
+    setDone(0);
+  };
+
+  useEffect(() => {
+    if (filterDoneContents) {
+      dispatch({
+        type: LOAD_CONTENTS_SUCCESS,
+        data: filterDoneContents.data.data,
+      });
+    }
+  }, [filterDoneContents]);
+
+  useEffect(() => {
+    if (contentsData) {
+      dispatch({
+        type: LOAD_CONTENTS_SUCCESS,
+        data: contentsData.data.data,
+      });
+    }
+  }, [contentsData]);
+
   return (
     <Menu>
       <ul>
-        <li>
+        <li onClick={handleAll}>
+          <p>전체문제</p>
+        </li>
+        <li onClick={handleResolving}>
           <p>미해결문제</p>
         </li>
-        <li>
+        <li onClick={handleDone}>
           <p>해결된문제</p>
         </li>
         <li onClick={() => setMenuList(prev => !prev)}>
           <p>스택별 문제</p>
-          {MenuList ? <StackMore /> : null}
+          {MenuList ? <StackMore closeMenuList={setMenuList} /> : null}
         </li>
       </ul>
       <DividerCustom />
