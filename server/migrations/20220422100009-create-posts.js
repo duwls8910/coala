@@ -19,7 +19,7 @@ module.exports = {
         type: Sequelize.TEXT,
       },
       thumbnail: {
-        type: Sequelize.STRING,
+        type: Sequelize.TEXT,
       },
       description: {
         type: Sequelize.STRING,
@@ -27,10 +27,10 @@ module.exports = {
       stack: {
         type: Sequelize.STRING,
       },
-      chatroomId: {
-        type: Sequelize.INTEGER,
-      },
       done: {
+        type: Sequelize.BOOLEAN,
+      },
+      in: {
         type: Sequelize.BOOLEAN,
       },
       createdAt: {

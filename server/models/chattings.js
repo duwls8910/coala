@@ -13,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'userId',
         sourceKey: 'id',
       });
-      this.belongsTo(models.chatrooms, {
+      this.belongsTo(models.posts, {
         foreignKey: 'chatroomId',
         sourceKey: 'id',
       });
@@ -23,7 +23,10 @@ module.exports = (sequelize, DataTypes) => {
     {
       userId: DataTypes.INTEGER,
       chatroomId: DataTypes.INTEGER,
-      content: DataTypes.STRING,
+      content: DataTypes.TEXT,
+      code: DataTypes.TEXT,
+      image: DataTypes.TEXT,
+      time: DataTypes.STRING,
     },
     {
       sequelize,

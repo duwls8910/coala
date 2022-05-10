@@ -1,9 +1,18 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, Avatar, Divider, Tag } from 'antd';
-import { HeartFilled } from '@ant-design/icons';
+import {
+  HeartFilled,
+  HeartOutlined,
+  MessageOutlined,
+  MessageFilled,
+} from '@ant-design/icons';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router';
+import { useMutation } from 'react-query';
+import { useSelector, useDispatch } from 'react-redux';
 import { SView, MView } from '../config';
+import { likeAPI, unLikeAPI } from '../api/content';
+import { CONTENT_LIKE_REQUEST } from '../reducer/content';
 
 const CardContainer = styled(Card)`
   width: 270px;
@@ -49,6 +58,26 @@ const CardContainer = styled(Card)`
     right: -0.5rem;
     top: 0.3rem;
   }
+  .filled-icon {
+    color: red;
+    cursor: pointer;
+    /* pointer-events: none; */
+  }
+  .outline-icon {
+    cursor: pointer;
+    /* pointer-events: none; */
+  }
+  .user-in {
+    color: green;
+    position: absolute;
+    right: 2.2rem;
+    bottom: 0.3rem;
+  }
+  .user-out {
+    position: absolute;
+    right: 2.2rem;
+    bottom: 0.3rem;
+  }
   @media screen and (max-width: ${MView}px) {
     & {
       width: 320px;
@@ -61,20 +90,64 @@ const CardContainer = styled(Card)`
       height: 450px;
     }
   }
+  .blinking {
+    -webkit-animation: blink 0.5s ease-in-out infinite alternate;
+    -moz-animation: blink 0.5s ease-in-out infinite alternate;
+    animation: blink 0.5s ease-in-out infinite alternate;
+  }
+  @-webkit-keyframes blink {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @-moz-keyframes blink {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes blink {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
 `;
 
 const { Meta } = Card;
 
 function Content({ contentInfo }) {
   const { profile, username } = contentInfo.userInfo;
+  const [like, setlike] = useState(false);
   const { thumbnail, updatedAt, stack, title, description, likers, done } =
     contentInfo;
   const customUpdate = updatedAt.split(' ')[0];
   const navigate = useNavigate();
-
+  const { userInfo } = useSelector(state => state.user);
+  const likeMutation = useMutation(() => likeAPI(contentInfo.id));
+  const unLikeMutation = useMutation(() => unLikeAPI(contentInfo.id));
+  console.log('contentinfo입니다', contentInfo.in);
+  const handleLike = () => {
+    likeMutation.mutate({
+      userId: userInfo.id,
+    });
+  };
+  const handleUnLike = () => {
+    unLikeMutation.mutate({
+      userId: userInfo.id,
+    });
+  };
   const handleDetail = () => {
     navigate(`/content/${contentInfo.id}`);
   };
+  useEffect(() => {}, [contentInfo.in]);
   return (
     <CardContainer
       onClick={handleDetail}
@@ -102,8 +175,18 @@ function Content({ contentInfo }) {
           <Tag className="solved-tag" color={done ? 'gold' : 'blue'}>
             {done ? 'solved' : 'resolving'}
           </Tag>
-          <div className="heart-icon">
-            <HeartFilled /> {likers.length}
+          {contentInfo.in ? (
+            <MessageFilled className="user-in blinking" />
+          ) : (
+            <MessageOutlined className="user-out" />
+          )}
+          <div className="heart-icon" onClick={() => setlike(!like)}>
+            {!like ? (
+              <HeartOutlined className="outline-icon" onClick={handleLike} />
+            ) : (
+              <HeartFilled className="filled-icon" onClick={handleUnLike} />
+            )}
+            {likers.length}
           </div>
         </div>
       </div>

@@ -1,4 +1,9 @@
 import '@toast-ui/editor/dist/toastui-editor.css';
+import 'prismjs/themes/prism.css';
+import '@toast-ui/editor-plugin-code-syntax-highlight/dist/toastui-editor-plugin-code-syntax-highlight.css';
+import Prism from 'prismjs';
+import 'prismjs/components/prism-clojure';
+import codeSyntaxHighlight from '@toast-ui/editor-plugin-code-syntax-highlight';
 import { Editor } from '@toast-ui/react-editor';
 import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
@@ -9,8 +14,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useMutation } from 'react-query';
 import { SET_ERROR_MESSAGE } from '../reducer/modal';
 import { CoalaGreen, language, colors, MView, SView } from '../config';
-import uploadFiles from '../firebase';
-import { postContentAPI } from '../api/content';
+import { uploadFiles } from '../firebase';
+import { editContentAPI, postContentAPI } from '../api/content';
 
 const Container = styled.div`
   width: 95%;
@@ -78,18 +83,22 @@ const Container = styled.div`
   }
 `;
 
-function Post() {
+function Post({ isEdit }) {
   const [tagsInfo, setTagsInfo] = useState([]);
-  const [title, setTitle] = useState('');
-  const [tag, setTag] = useState(null);
+  const [title, setTitle] = useState(isEdit ? isEdit.title : '');
+  const [tag, setTag] = useState(
+    isEdit ? { stack: isEdit.stack, color: 'gold' } : null,
+  );
   const [innerWidth, setInnerWidth] = useState(MView);
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState(isEdit ? isEdit.content : '');
   const editorRef = useRef();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { userInfo } = useSelector(state => state.user);
 
   const postContentMutation = useMutation(postContentAPI);
+  const editContentMutation = useMutation(editContentAPI);
+
   // 로그인 안하고 들어오면 메인페이지로 강제로 전환
   if (!userInfo) {
     navigate('/');
@@ -100,8 +109,21 @@ function Post() {
   };
 
   useEffect(() => {
+    if (editContentMutation.isSuccess) {
+      const { contentId } = editContentMutation.data.data.data;
+      navigate(`/content/${contentId}`);
+    } else if (editContentMutation.isError) {
+      dispatch({
+        type: SET_ERROR_MESSAGE,
+        data: '포스트 수정 실패.',
+      });
+    }
+  }, [editContentMutation.status]);
+
+  useEffect(() => {
     if (postContentMutation.isSuccess) {
-      console.log(postContentMutation.data);
+      const { contentId } = postContentMutation.data.data.data;
+      navigate(`/content/${contentId}`);
     } else if (postContentMutation.isError) {
       dispatch({
         type: SET_ERROR_MESSAGE,
@@ -134,11 +156,20 @@ function Post() {
         userId: userInfo.id,
         title,
         stack: tag.stack,
-        content: editorRef.current.getInstance().getHTML(),
+        content: editorRef.current.getInstance().getMarkdown(),
         thumbnail: tumb,
         description,
       };
-      postContentMutation.mutate(contentInfo);
+      if (isEdit) {
+        const editBody = {
+          ...contentInfo,
+          postId: isEdit.id,
+        };
+        setContent(editorRef.current.getInstance().getMarkdown());
+        editContentMutation.mutate(editBody);
+      } else {
+        postContentMutation.mutate(contentInfo);
+      }
     } else {
       dispatch({
         type: SET_ERROR_MESSAGE,
@@ -218,6 +249,7 @@ function Post() {
         )}
 
         <Editor
+          plugins={[[codeSyntaxHighlight, { highlighter: Prism }]]}
           height="100%"
           initialValue={content}
           previewStyle={innerWidth < SView ? 'tab' : 'vertical'}
@@ -234,9 +266,15 @@ function Post() {
             <LeftOutlined />
             <p>나가기</p>
           </button>
-          <button className="submit-btn" type="submit">
-            출간하기
-          </button>
+          {isEdit ? (
+            <button className="submit-btn" type="submit">
+              수정하기
+            </button>
+          ) : (
+            <button className="submit-btn" type="submit">
+              출간하기
+            </button>
+          )}
         </div>
       </form>
     </Container>
