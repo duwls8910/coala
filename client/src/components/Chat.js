@@ -8,8 +8,9 @@ import {
 import styled from 'styled-components';
 import ScrollToBottom from 'react-scroll-to-bottom';
 import { useDispatch } from 'react-redux';
-import { ZOOM_CHAT_IMAGE } from '../reducer/chat';
+import { ZOOM_CHAT_CODE, ZOOM_CHAT_IMAGE } from '../reducer/chat';
 import { uploadChatFiles } from '../firebase';
+import { SView } from '../config';
 
 const Chatroom = styled.div`
   background-color: white;
@@ -18,7 +19,7 @@ const Chatroom = styled.div`
   box-shadow: 2px 1px 17px -3px rgba(0, 0, 0, 0.42);
   right: 0.2rem;
   width: 530px;
-  height: 650px;
+  height: 600px;
   /* border-radius: 10px 10px 0px 0px; */
   margin-left: 0.5rem;
   .close-btn {
@@ -32,7 +33,9 @@ const Chatroom = styled.div`
     margin-bottom: 3px !important;
   }
   .message-container {
-    height: 560px;
+    padding-left: 3px;
+    padding-right: 3px;
+    height: 510px;
     overflow-y: auto;
   }
   .input-box {
@@ -83,6 +86,13 @@ const Chatroom = styled.div`
         max-height: 220px;
       }
     }
+  }
+  .code-block {
+    background-color: gray;
+    margin: 2px;
+    padding: 2px;
+    border-radius: 5px;
+    cursor: pointer;
   }
   #you {
     .message-info {
@@ -136,13 +146,32 @@ const Chatroom = styled.div`
   #image-upload {
     display: none;
   }
+
+  @media screen and (max-width: ${SView}px) {
+    & {
+      width: 400px;
+      height: 550px;
+    }
+    .message-container {
+      height: 460px;
+    }
+  }
 `;
 
-function Chat({ socket, room, userInfo, chattings, handleClose }) {
+function Chat({
+  socket,
+  room,
+  userInfo,
+  chattings,
+  handleClose,
+  handleEditCodePage,
+  sendEditCode,
+  handleSendEditCode,
+}) {
   const dispatch = useDispatch();
   const [currentMessage, setCurrentMessage] = useState('');
   const [messageList, setMessageList] = useState([]);
-
+  console.log(messageList);
   // 이미지 영역.
   const [image, setImage] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -186,6 +215,7 @@ function Chat({ socket, room, userInfo, chattings, handleClose }) {
         userId: userInfo.id,
         message: null,
         image: dataurl,
+        code: null,
         time: `${new Date(Date.now()).getHours()}:${minutes}`,
       };
       await socket.emit('send_message', imgData);
@@ -200,7 +230,43 @@ function Chat({ socket, room, userInfo, chattings, handleClose }) {
   };
   // 이미지 영역.
 
-  const handleEditCode = () => {};
+  // 코드 블럭 영역
+  useEffect(async () => {
+    if (sendEditCode) {
+      // code Editor에서 code 작성해서 보내줬을 경우.
+      console.log(sendEditCode);
+      if (sendEditCode.editorValue !== '') {
+        let minutes = new Date(Date.now()).getMinutes();
+        if (minutes < 10) {
+          minutes = `0${minutes}`;
+        }
+        const codeMessageData = {
+          room,
+          author: userInfo.username,
+          profile: userInfo.profile,
+          userId: userInfo.id,
+          message: null,
+          image: null,
+          code: JSON.stringify(sendEditCode),
+          time: `${new Date(Date.now()).getHours()}:${minutes}`,
+        };
+        await socket.emit('send_message', codeMessageData);
+        setMessageList([...messageList, codeMessageData]);
+        handleSendEditCode('');
+      }
+    }
+  }, [sendEditCode]);
+
+  const handleEditCode = () => {
+    handleEditCodePage(true);
+  };
+
+  const handleZoomCode = codeInfo => {
+    dispatch({
+      type: ZOOM_CHAT_CODE,
+      data: codeInfo,
+    });
+  };
 
   useEffect(() => {
     const messages = chattings.map(chatting => ({
@@ -211,10 +277,19 @@ function Chat({ socket, room, userInfo, chattings, handleClose }) {
       userId: chatting.userId,
       message: chatting.content,
       image: chatting.image,
+      code: chatting.code ? JSON.parse(chatting.code) : null,
       time: chatting.time,
     }));
     setMessageList([...messages]);
-    socket.emit('join_room', room);
+    socket.emit('join_room', {
+      room,
+      author: userInfo.username,
+      userId: userInfo.id,
+    });
+    // 유저 입장알림.
+    socket.on('send_connect', data => {
+      setMessageList(list => [...list, data]);
+    });
   }, []);
   // 메시지 전송 메서드
   const sendMessage = async () => {
@@ -240,6 +315,7 @@ function Chat({ socket, room, userInfo, chattings, handleClose }) {
         userId: userInfo.id,
         message: customMessage,
         image: null,
+        code: null,
         time: `${new Date(Date.now()).getHours()}:${minutes}`,
       };
       await socket.emit('send_message', messageData);
@@ -256,6 +332,17 @@ function Chat({ socket, room, userInfo, chattings, handleClose }) {
 
   return (
     <Chatroom>
+      <button
+        onClick={() => {
+          socket.emit('left_room', {
+            room,
+            userId: userInfo.id,
+          });
+        }}
+        type="button"
+      >
+        룸나가기
+      </button>
       <div className="chat-header">
         <h3>Coala Chat</h3>
         <Divider id="divider" />
@@ -291,9 +378,19 @@ function Chat({ socket, room, userInfo, chattings, handleClose }) {
                         src={messageContent.image}
                       />
                     </div>
-                  ) : (
+                  ) : null}
+                  {messageContent.message ? (
                     <span>{messageContent.message}</span>
-                  )}
+                  ) : null}
+                  {messageContent.code ? (
+                    <div
+                      onClick={() => handleZoomCode(messageContent.code)}
+                      className="code-block"
+                    >
+                      <p>Code:</p>
+                      <p>{messageContent.code.language}</p>
+                    </div>
+                  ) : null}
                 </div>
                 <div className="message-meta">
                   <span id="time">{messageContent.time}</span>

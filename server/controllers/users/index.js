@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { users, posts, like } = require('../../models');
 const {
   generateAccessToken,
@@ -5,6 +6,7 @@ const {
   isAuthorized,
 } = require('../token');
 const crypto = require('crypto');
+const axios = require('axios');
 
 module.exports = {
   login: async (req, res) => {
@@ -181,7 +183,7 @@ module.exports = {
     if (!verify) {
       res.status(401).send({ message: 'Invalid Token' });
     } else {
-      const { email } = verify;
+      const { id, email } = verify;
       const { username, profile } = req.body;
       await users
         .findOne({
@@ -200,9 +202,17 @@ module.exports = {
                 },
               )
               .then(() => {
-                res.status(200).send({
-                  message: 'user information changed',
-                  data: { username, profile },
+                const accessToken = generateAccessToken({
+                  id,
+                  username,
+                  profile,
+                  email,
+                });
+                sendAccessToken(res, accessToken, {
+                  id,
+                  username,
+                  profile,
+                  email,
                 });
               });
           } else {
@@ -267,5 +277,87 @@ module.exports = {
     } else {
       res.status(401).send({ message: 'Invalid Token' });
     }
+  },
+  logingithub: async (req, res) => {
+    // 클라에서 받아온 깃헙 인가코드를
+    // 서버에서 받아 깃헙 토큰 교환 요청후
+    // 깃헙 API 로 유저정보 받아서
+    // 코알라 디비에 정보넣고 코알라 토큰 생성후 클라로 보내줌
+    const authCode = req.body.authorizationCode;
+    // console.log('인가코드', authCode);
+    await axios({
+      method: 'post',
+      url: `https://github.com/login/oauth/access_token`,
+      headers: { Accept: 'application/json' },
+      data: {
+        client_id: process.env.GITHUB_CLIENT_ID,
+        // 절대 비공개! 서버에서만 써야함
+        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        code: authCode,
+      },
+    }).then(async (result) => {
+      const accessToken = result.data.access_token;
+      const gitUser = await axios({
+        method: 'get',
+        url: 'https://api.github.com/user',
+        headers: {
+          authorization: `token ${accessToken}`,
+        },
+      });
+      console.log('!!!!', gitUser);
+      const { login, id, node_id, avatar_url } = gitUser.data;
+      const salt = Math.round(new Date().valueOf() * Math.random()) + '';
+      const hashPassword = crypto
+        .createHash('sha512')
+        .update(node_id + salt)
+        .digest('hex');
+
+      await users
+        .findOrCreate({
+          where: { email: `${id}@coala.com` },
+          defaults: {
+            username: login,
+            profile: avatar_url,
+            password: hashPassword,
+            salt: salt,
+          },
+        })
+        .then(([result, created]) => {
+          if (!created) {
+            // 겹치는 이메일이 있는경우
+            const { id, username, profile, email } = result.dataValues;
+            const accessToken = generateAccessToken({
+              id,
+              username,
+              profile,
+              email,
+            });
+            sendAccessToken(res, accessToken, {
+              id,
+              username,
+              profile,
+              email,
+            });
+          } else {
+            const { id, username, profile, email } = result.dataValues;
+            const accessToken = generateAccessToken({
+              id,
+              username,
+              profile,
+              email,
+            });
+            sendAccessToken(res, accessToken, {
+              id,
+              username,
+              profile,
+              email,
+            });
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+          res.status(500);
+        });
+    });
   },
 };

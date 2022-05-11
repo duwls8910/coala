@@ -15,10 +15,13 @@ module.exports = {
         type: Sequelize.INTEGER,
       },
       content: {
-        type: Sequelize.STRING,
+        type: Sequelize.TEXT,
+      },
+      code: {
+        type: Sequelize.TEXT,
       },
       image: {
-        type: Sequelize.STRING,
+        type: Sequelize.TEXT,
       },
       time: {
         type: Sequelize.STRING,

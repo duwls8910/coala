@@ -12,7 +12,7 @@ module.exports = {
         type: Sequelize.STRING,
       },
       profile: {
-        type: Sequelize.STRING,
+        type: Sequelize.TEXT,
       },
       email: {
         type: Sequelize.STRING,
@@ -22,6 +22,9 @@ module.exports = {
       },
       salt: {
         type: Sequelize.STRING,
+      },
+      admin: {
+        type: Sequelize.BOOLEAN,
       },
       createdAt: {
         allowNull: false,

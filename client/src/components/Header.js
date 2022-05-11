@@ -19,6 +19,10 @@ const HeaderWrapper = styled.header`
   align-items: center;
   justify-content: space-between;
   position: relative;
+  #logo {
+    width: 130px;
+    height: 42px;
+  }
   .left-container {
     margin-left: 1rem;
     .logo {
@@ -100,7 +104,7 @@ const HeaderWrapper = styled.header`
   }
 `;
 
-function Header({ page }) {
+function Header() {
   const [isUserMore, setIsUserMore] = useState(false);
   const [search, setSearch] = useState('');
   const { userInfo } = useSelector(state => state.user);
@@ -136,18 +140,16 @@ function Header({ page }) {
       {isUserMore ? <UserMore /> : null}
       <div className="left-container">
         <div onClick={() => navigator('/')} className="logo">
-          Coala
+          <img id="logo" src="/Coala_logo.png" alt="coala_logo" />
         </div>
       </div>
       <div className="right-container">
-        {page === 'Home' ? (
-          <Search
-            placeholder="search..."
-            onChange={e => setSearch(e.target.value)}
-            onSearch={handleSearch}
-            className="search-input"
-          />
-        ) : null}
+        <Search
+          placeholder="search..."
+          onChange={e => setSearch(e.target.value)}
+          onSearch={handleSearch}
+          className="search-input"
+        />
 
         {userInfo ? (
           <div className="user-container">

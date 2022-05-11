@@ -1,4 +1,9 @@
 import '@toast-ui/editor/dist/toastui-editor.css';
+import 'prismjs/themes/prism.css';
+import '@toast-ui/editor-plugin-code-syntax-highlight/dist/toastui-editor-plugin-code-syntax-highlight.css';
+import Prism from 'prismjs';
+import 'prismjs/components/prism-clojure';
+import codeSyntaxHighlight from '@toast-ui/editor-plugin-code-syntax-highlight';
 import { Editor } from '@toast-ui/react-editor';
 import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
@@ -79,7 +84,6 @@ const Container = styled.div`
 `;
 
 function Post({ isEdit }) {
-  console.log(isEdit);
   const [tagsInfo, setTagsInfo] = useState([]);
   const [title, setTitle] = useState(isEdit ? isEdit.title : '');
   const [tag, setTag] = useState(
@@ -93,6 +97,7 @@ function Post({ isEdit }) {
   const { userInfo } = useSelector(state => state.user);
 
   const postContentMutation = useMutation(postContentAPI);
+  const editContentMutation = useMutation(editContentAPI);
 
   // 로그인 안하고 들어오면 메인페이지로 강제로 전환
   if (!userInfo) {
@@ -102,6 +107,18 @@ function Post({ isEdit }) {
   const contentHandler = () => {
     setContent(editorRef.current.getInstance().getMarkdown() || '');
   };
+
+  useEffect(() => {
+    if (editContentMutation.isSuccess) {
+      const { contentId } = editContentMutation.data.data.data;
+      navigate(`/content/${contentId}`);
+    } else if (editContentMutation.isError) {
+      dispatch({
+        type: SET_ERROR_MESSAGE,
+        data: '포스트 수정 실패.',
+      });
+    }
+  }, [editContentMutation.status]);
 
   useEffect(() => {
     if (postContentMutation.isSuccess) {
@@ -139,21 +156,17 @@ function Post({ isEdit }) {
         userId: userInfo.id,
         title,
         stack: tag.stack,
-        content: editorRef.current.getInstance().getHTML(),
+        content: editorRef.current.getInstance().getMarkdown(),
         thumbnail: tumb,
         description,
       };
       if (isEdit) {
-        editContentAPI(isEdit.id, contentInfo)
-          .then(res => {
-            console.log(res);
-          })
-          .catch(error => {
-            dispatch({
-              type: SET_ERROR_MESSAGE,
-              data: '수정실패.',
-            });
-          });
+        const editBody = {
+          ...contentInfo,
+          postId: isEdit.id,
+        };
+        setContent(editorRef.current.getInstance().getMarkdown());
+        editContentMutation.mutate(editBody);
       } else {
         postContentMutation.mutate(contentInfo);
       }
@@ -236,6 +249,7 @@ function Post({ isEdit }) {
         )}
 
         <Editor
+          plugins={[[codeSyntaxHighlight, { highlighter: Prism }]]}
           height="100%"
           initialValue={content}
           previewStyle={innerWidth < SView ? 'tab' : 'vertical'}

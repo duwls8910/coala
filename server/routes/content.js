@@ -20,11 +20,11 @@ const {
 const router = express.Router();
 
 router.post('/', write); // 컨텐츠 작성
-router.patch('/:postId', update); // 작성한 컨텐츠 수정
+router.patch('/edit', update); // 작성한 컨텐츠 수정
 router.delete('/:postId', remove); // 컨텐츠 삭제
 router.patch('/:postId/done', donePost); // 작성한 컨텐츠 문제 해결
-router.post('/:postId/like', likePost); // 컨텐츠 좋아요 요청
-router.post('/:postId/unlike', unlikePost); // 컨텐츠 좋아요 취소
+router.patch('/like', likePost); // 컨텐츠 좋아요 요청
+router.patch('/unlike', unlikePost); // 컨텐츠 좋아요 취소
 router.get('/:postId', post); // 컨텐츠 디테일 정보 가져오기
 router.post('/comment', comment); // 댓글 작성
 router.delete('/comment/:commentId', commentR); // 댓글 삭제
@@ -89,17 +89,10 @@ router.delete('/comment/:commentId', commentR); // 댓글 삭제
  */
 /**
  * @swagger
- *  /content/{postId}:
+ *  /content/edit:
  *    patch:
  *      summary: 컨텐츠 수정
  *      tags: [Content]
- *      parameters:
- *      - in: path
- *        name: postId
- *        required: true
- *        description: 컨텐츠 아이디
- *        schema:
- *          type: integer
  *      requestBody:
  *        required: true
  *        content:
@@ -107,6 +100,9 @@ router.delete('/comment/:commentId', commentR); // 댓글 삭제
  *            schema:
  *              type: object
  *              properties:
+ *                postId:
+ *                   type: integer
+ *                   example: 1
  *                title:
  *                   type: string
  *                   example: test

@@ -1,12 +1,4 @@
-const { verify } = require('jsonwebtoken');
-const {
-  users,
-  posts,
-  like,
-  chatrooms,
-  post_comment,
-  chattings,
-} = require('../../models');
+const { users, posts, like, post_comment, chattings } = require('../../models');
 const { isAuthorized } = require('../token');
 
 module.exports = {
@@ -19,7 +11,6 @@ module.exports = {
       if (!title || !content || !stack || !description || !userId) {
         res.status(400).send({ message: 'Invalid request' });
       } else {
-        await chatrooms.create({ userId });
         await posts
           .create({
             userId,
@@ -28,6 +19,7 @@ module.exports = {
             stack,
             thumbnail,
             description,
+            in: true,
           })
           .then((data) => {
             res.status(200).send({
@@ -48,8 +40,9 @@ module.exports = {
     // 컨텐츠 수정
     const verify = isAuthorized(req);
     if (verify) {
-      const { title, content, stack, thumbnail, description } = req.body;
-      if (req.params.postId) {
+      const { postId, title, content, stack, thumbnail, description } =
+        req.body;
+      if (postId) {
         // 파라미터가 없으면 400 있으면 200
         if (!title || !content || !stack) {
           res.status(400).send({ message: 'Invalid request' });
@@ -62,16 +55,17 @@ module.exports = {
                 stack,
                 thumbnail,
                 description,
+                in: true,
               },
               {
-                where: { id: req.params.postId },
+                where: { id: postId },
               },
             )
-            .then((data) => {
+            .then(() => {
               res.status(200).send({
                 message: 'post update',
                 data: {
-                  contentId: data[0],
+                  contentId: postId,
                 },
               });
             })
@@ -131,8 +125,8 @@ module.exports = {
     const verify = isAuthorized(req);
 
     if (verify) {
-      const { postId } = req.params;
-      const { userId } = req.body;
+      // const { postId } = req.params;
+      const { userId, postId } = req.body;
 
       if (!postId || !userId) {
         await like.create({ postId: postId, userId: userId });
@@ -148,8 +142,8 @@ module.exports = {
     // 컨텐츠 좋아요 취소
     const verify = isAuthorized(req);
     if (verify) {
-      const { postId } = req.params;
-      const { userId } = req.body;
+      // const { postId } = req.params;
+      const { userId, postId } = req.body;
 
       if (!postId || !userId) {
         await like.destroy({ where: { postId: postId, userId: userId } });
@@ -196,7 +190,7 @@ module.exports = {
             },
             {
               model: chattings,
-              attributes: ['id', 'userId', 'content', 'image', 'time'],
+              attributes: ['id', 'userId', 'content', 'image', 'time', 'code'],
               include: [
                 {
                   model: users,
@@ -244,7 +238,6 @@ module.exports = {
             postId,
           })
           .then((data) => {
-            console.log(data);
             res.status(200).send({
               message: 'comment is saved',
               data: {

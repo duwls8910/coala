@@ -19,7 +19,7 @@ module.exports = {
         type: Sequelize.TEXT,
       },
       thumbnail: {
-        type: Sequelize.STRING,
+        type: Sequelize.TEXT,
       },
       description: {
         type: Sequelize.STRING,
@@ -28,6 +28,9 @@ module.exports = {
         type: Sequelize.STRING,
       },
       done: {
+        type: Sequelize.BOOLEAN,
+      },
+      in: {
         type: Sequelize.BOOLEAN,
       },
       createdAt: {

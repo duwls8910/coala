@@ -1,5 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import '@toast-ui/editor/dist/toastui-editor-viewer.css';
+import 'prismjs/themes/prism.css';
+import '@toast-ui/editor-plugin-code-syntax-highlight/dist/toastui-editor-plugin-code-syntax-highlight.css';
+import Prism from 'prismjs';
+import 'prismjs/components/prism-clojure';
+import codeSyntaxHighlight from '@toast-ui/editor-plugin-code-syntax-highlight';
 import { Viewer } from '@toast-ui/react-editor';
 import styled from 'styled-components';
 import { useParams } from 'react-router-dom';
@@ -18,6 +23,9 @@ import Comments from '../components/Comments';
 import CommentList from '../components/CommentList';
 import { EDIT_CONTENT_REQUEST } from '../reducer/content';
 import CodeEditor from '../components/CodeEditor';
+import ZoomCode from '../components/ZoomCode';
+import { SET_SUCCESS_MESSAGE } from '../reducer/modal';
+import LoadingContents from '../components/LoadingContents';
 
 const Container = styled.main`
   width: 85%;
@@ -104,10 +112,12 @@ function ContentDetail() {
   const [isChat, setIsChat] = useState(false);
   const [confirm, setConfirm] = useState('');
   const [commentsList, setCommentsList] = useState([]);
-  const [isEditCode , setIsEditCode] = useState(false);
-  const { socket, zoomImg } = useSelector(state => state.chat);
+  const [isEditCode, setIsEditCode] = useState(false);
+  const [sendEditCode, setSendEditCode] = useState('');
+  const { socket, zoomImg, zoomCode } = useSelector(state => state.chat);
   const { userInfo } = useSelector(state => state.user);
   const { contentId } = useParams();
+  const viewerRef = useRef();
   const {
     isError,
     isLoading,
@@ -117,7 +127,9 @@ function ContentDetail() {
   } = useQuery(['content', contentId], () => getContentAPI(contentId), {
     refetchOnWindowFocus: false,
     retry: 0,
+    enabled: !!contentId,
   });
+
   // console.log(contentDetail.data.data.comments);
   const handleEdit = () => {
     dispatch({
@@ -127,6 +139,15 @@ function ContentDetail() {
     navigate('/edit');
   };
 
+  // editerview content 수정할때 필요함.
+  useEffect(() => {
+    if (viewerRef.current) {
+      viewerRef.current
+        .getInstance()
+        .setMarkdown(contentDetail.data.data.content);
+    }
+  }, [contentDetail?.data.data.content]);
+
   useEffect(() => {
     if (contentDetail) {
       setCommentsList(contentDetail.data.data.comments);
@@ -134,14 +155,28 @@ function ContentDetail() {
     //
   }, [isSuccess]);
 
+  useEffect(() => {
+    if (userInfo) {
+      console.log('입장');
+
+      // 퇴장
+      return () =>
+        socket.emit('left_room', {
+          room: contentId,
+          userId: userInfo.id,
+        });
+    }
+  }, [userInfo]);
+
   if (isLoading) {
-    return <h1>Loading....</h1>;
+    return <LoadingContents />;
   }
   if (isSuccess) {
     const { id } = contentDetail.data.data.userInfo;
     const { done } = contentDetail.data.data;
     return (
       <>
+        {zoomCode ? <ZoomCode codeInfo={zoomCode} /> : null}
         {zoomImg ? <ZoomImage imgUrl={zoomImg} /> : null}
         {confirm ? (
           <ConfirmModal
@@ -150,6 +185,12 @@ function ContentDetail() {
             contentId={contentId}
             closeConfirm={setConfirm}
             contentData={contentDetail.data.data}
+          />
+        ) : null}
+        {isEditCode ? (
+          <CodeEditor
+            handleSendEditCode={setSendEditCode}
+            handleClose={setIsEditCode}
           />
         ) : null}
         <Header />
@@ -163,7 +204,7 @@ function ContentDetail() {
                   src={
                     contentDetail.data.data.userInfo.profile
                       ? contentDetail.data.data.userInfo.profile
-                      : 'https://joeschmoe.io/api/v1/random'
+                      : 'https://joeschmoe.io/api/v1/2'
                   }
                 />
                 <span>{contentDetail.data.data.userInfo.username}</span>
@@ -187,7 +228,11 @@ function ContentDetail() {
               ) : null}
             </div>
             <div className="tag">{contentDetail.data.data.stack}</div>
-            <Viewer initialValue={contentDetail.data.data.content} />
+            <Viewer
+              plugins={[[codeSyntaxHighlight, { highlighter: Prism }]]}
+              initialValue={contentDetail.data.data.content}
+              ref={viewerRef}
+            />
             {done ? (
               <>
                 <Comments
@@ -203,10 +248,13 @@ function ContentDetail() {
 
           {isChat ? (
             <Chat
+              handleSendEditCode={setSendEditCode}
+              sendEditCode={sendEditCode}
               socket={socket}
               chattings={contentDetail.data.data.chattings}
               userInfo={userInfo || null}
               room={contentId}
+              handleEditCodePage={setIsEditCode}
               handleClose={setIsChat}
             />
           ) : (

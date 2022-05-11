@@ -22,10 +22,6 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'userId',
         sourceKey: 'id',
       });
-      this.hasMany(models.user_chatrooms, {
-        foreignKey: 'userId',
-        sourceKey: 'id',
-      });
       this.hasMany(models.post_comment, {
         foreignKey: 'userId',
         sourceKey: 'id',
@@ -40,7 +36,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
       profile: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         defaultValue: null,
       },
       email: {
@@ -54,6 +50,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
+      admin: { type: DataTypes.BOOLEAN, defaultValue: 0 },
       salt: {
         type: DataTypes.STRING,
         allowNull: false,
