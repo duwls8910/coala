@@ -10,9 +10,9 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router';
 import { useMutation } from 'react-query';
 import { useSelector, useDispatch } from 'react-redux';
+import { SET_ERROR_MESSAGE } from '../reducer/modal';
 import { SView, MView } from '../config';
 import { likeAPI, unLikeAPI } from '../api/content';
-import { CONTENT_LIKE_REQUEST } from '../reducer/content';
 
 const CardContainer = styled(Card)`
   width: 270px;
@@ -24,8 +24,9 @@ const CardContainer = styled(Card)`
     transform: scale(1.03, 1.03);
   }
   .heart-icon {
+    width: 40px;
     position: absolute;
-    right: 0.5rem;
+    right: 0;
     bottom: 0;
   }
   .ant-card-body {
@@ -61,22 +62,33 @@ const CardContainer = styled(Card)`
   .filled-icon {
     color: red;
     cursor: pointer;
-    /* pointer-events: none; */
   }
   .outline-icon {
     cursor: pointer;
-    /* pointer-events: none; */
   }
   .user-in {
     color: green;
-    position: absolute;
-    right: 2.2rem;
-    bottom: 0.3rem;
+    position: relative;
+    margin-right: 5px;
   }
   .user-out {
+    position: relative;
+    margin-right: 5px;
+  }
+  .heart-icon {
+    position: relative;
+    margin-right: 1px;
+    right: 0.1rem;
+  }
+  .small-icon-box {
+    display: flex;
     position: absolute;
-    right: 2.2rem;
+    height: 20px;
+    right: 1px;
     bottom: 0.3rem;
+  }
+  .total {
+    color: grey;
   }
   @media screen and (max-width: ${MView}px) {
     & {
@@ -124,30 +136,66 @@ const CardContainer = styled(Card)`
 const { Meta } = Card;
 
 function Content({ contentInfo }) {
-  const { profile, username } = contentInfo.userInfo;
-  const [like, setlike] = useState(false);
   const { thumbnail, updatedAt, stack, title, description, likers, done } =
     contentInfo;
+  const { profile, username } = contentInfo.userInfo;
+  const [totalLike, setTotalLike] = useState(likers.length);
+  const [like, setlike] = useState(false);
   const customUpdate = updatedAt.split(' ')[0];
   const navigate = useNavigate();
   const { userInfo } = useSelector(state => state.user);
-  const likeMutation = useMutation(() => likeAPI(contentInfo.id));
-  const unLikeMutation = useMutation(() => unLikeAPI(contentInfo.id));
-  console.log('contentinfo입니다', contentInfo.in);
-  const handleLike = () => {
-    likeMutation.mutate({
-      userId: userInfo.id,
-    });
+  const likeMutation = useMutation(likeAPI);
+  const unLikeMutation = useMutation(unLikeAPI);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (userInfo) {
+      if (likers.includes(userInfo.id)) setlike(true);
+    }
+  }, [userInfo]);
+
+  useEffect(() => {
+    if (totalLike > 999) {
+      setTotalLike(`${`${totalLike / 1000}`.slice(0, 3)}k`);
+    }
+  }, [totalLike]);
+
+  const handleLike = e => {
+    e.stopPropagation();
+    if (userInfo) {
+      if (!like) {
+        likeMutation.mutate({
+          postId: contentInfo.id,
+          userId: userInfo.id,
+        });
+      } else if (like) {
+        unLikeMutation.mutate({
+          postId: contentInfo.id,
+          userId: userInfo.id,
+        });
+      }
+    } else if (!userInfo) {
+      dispatch({
+        type: SET_ERROR_MESSAGE,
+        data: '로그인 정보가 필요합니다',
+      });
+    }
   };
-  const handleUnLike = () => {
-    unLikeMutation.mutate({
-      userId: userInfo.id,
-    });
-  };
+  useEffect(() => {
+    if (likeMutation.isSuccess) {
+      setlike(true);
+      setTotalLike(totalLike + 1);
+    }
+  }, [likeMutation.status]);
+  useEffect(() => {
+    if (unLikeMutation.isSuccess) {
+      setlike(false);
+      setTotalLike(totalLike - 1);
+    }
+  }, [unLikeMutation.status]);
   const handleDetail = () => {
     navigate(`/content/${contentInfo.id}`);
   };
-  useEffect(() => {}, [contentInfo.in]);
   return (
     <CardContainer
       onClick={handleDetail}
@@ -175,18 +223,22 @@ function Content({ contentInfo }) {
           <Tag className="solved-tag" color={done ? 'gold' : 'blue'}>
             {done ? 'solved' : 'resolving'}
           </Tag>
-          {contentInfo.in ? (
-            <MessageFilled className="user-in blinking" />
-          ) : (
-            <MessageOutlined className="user-out" />
-          )}
-          <div className="heart-icon" onClick={() => setlike(!like)}>
-            {!like ? (
-              <HeartOutlined className="outline-icon" onClick={handleLike} />
-            ) : (
-              <HeartFilled className="filled-icon" onClick={handleUnLike} />
-            )}
-            {likers.length}
+          <div className="small-icon-box">
+            <div className="user-inout-box">
+              {contentInfo.in ? (
+                <MessageFilled className="user-in blinking" />
+              ) : (
+                <MessageOutlined className="user-out" />
+              )}
+            </div>
+            <div className="heart-icon" onClick={handleLike}>
+              {!like ? (
+                <HeartOutlined className="outline-icon" />
+              ) : (
+                <HeartFilled className="filled-icon" />
+              )}
+              <span className="total">{totalLike}</span>
+            </div>
           </div>
         </div>
       </div>

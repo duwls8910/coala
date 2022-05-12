@@ -55,7 +55,8 @@ const io = socketIO(server, {
   // pingTimeout: 5000000000,
 });
 
-const { chattings, posts } = require('./models');
+const { chattings, posts, user_notification } = require('./models');
+const { verify } = require('jsonwebtoken');
 
 io.on('connection', (socket) => {
   console.log(
@@ -80,16 +81,23 @@ io.on('connection', (socket) => {
 -----------------------------------------------------`,
     );
     // 글작성한 유저가 채팅방에 접속했을때 변경
-    posts.update(
-      { in: true },
-      {
-        where: { id: data.room, userId: data.userId },
-      },
-    );
+    posts
+      .update(
+        { in: true },
+        {
+          where: { id: data.room, userId: data.userId },
+        },
+      )
+      .then(async () => {
+        console.log(`-----------------------------------------------------
+        send_join${data.room}
+  -----------------------------------------------------`);
+        await socket.emit(`send_join`, data.room);
+      });
   });
 
   socket.on('left_room', (data) => {
-    console.log(data);
+    // console.log(data);
     socket.leave(data.room);
     console.log(
       `-----------------------------------------------------
@@ -105,7 +113,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('send_message', async (data) => {
-    console.log('send_message:', data);
+    // console.log('send_message:', data);
     socket.to(data.room).emit('receive_message', data);
     await chattings.create({
       userId: data.userId,
@@ -115,10 +123,52 @@ io.on('connection', (socket) => {
       image: data.image,
       time: data.time,
     });
+    await posts
+      .findOne({
+        where: { id: data.room },
+        attributes: ['in', 'title', 'userId'],
+        raw: true,
+      })
+      .then(async (result) => {
+        // console.log(result);
+        if (result && result.in === 0) {
+          await user_notification.create({
+            userId: data.userId,
+            type: 'chat',
+            title: result.title,
+            postId: data.room,
+            postUserId: result.userId,
+          });
+        }
+      });
   });
 
   socket.on('disconnect', (reason) => {
     // console.log(socket);
+    if (
+      socket.handshake.headers.cookie &&
+      socket.handshake.headers.cookie.indexOf('jwt=') !== -1
+    ) {
+      const index = socket.handshake.headers.cookie.indexOf('jwt=');
+      const jwt = socket.handshake.headers.cookie.slice(index + 4);
+      // console.log(jwt);
+      const user = verify(jwt, process.env.ACCESS_SECRET, (error, decoded) => {
+        if (decoded) {
+          const { id, email, username, profile } = decoded;
+          return { id, email, username, profile };
+        } else {
+          console.log('error', error);
+        }
+      });
+      if (user) {
+        posts.update(
+          { in: false },
+          {
+            where: { userId: user.id },
+          },
+        );
+      }
+    }
     console.log(`User Disconnected: ${socket.id}`);
     console.log('disconnect reason: ', reason);
   });

@@ -1,30 +1,33 @@
 'use strict';
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('users', {
+    await queryInterface.createTable('user_notifications', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      username: {
+      userId: {
+        type: Sequelize.INTEGER,
+      },
+      type: {
         type: Sequelize.STRING,
       },
-      profile: {
-        type: Sequelize.TEXT,
-      },
-      email: {
+      title: {
         type: Sequelize.STRING,
       },
-      password: {
-        type: Sequelize.STRING,
+      postId: {
+        type: Sequelize.INTEGER,
       },
-      salt: {
-        type: Sequelize.STRING,
+      postUserId: {
+        type: Sequelize.INTEGER,
       },
-      admin: {
+      readAt: {
         type: Sequelize.BOOLEAN,
+      },
+      check: {
+        type: Sequelize.DATE,
       },
       createdAt: {
         allowNull: false,
@@ -37,6 +40,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('users');
+    await queryInterface.dropTable('user_notifications');
   },
 };

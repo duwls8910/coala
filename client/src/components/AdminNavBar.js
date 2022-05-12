@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { Divider } from 'antd';
 import { XLView, LView, MView, SView, CoalaGreen } from '../config';
-import StackMore from './StackMore';
 import { getfilterContentsAPI, getContentsAPI } from '../api/content';
 import { useQuery } from 'react-query';
 import { useDispatch } from 'react-redux';
@@ -58,36 +57,51 @@ const DividerCustom = styled(Divider)`
   margin-bottom: 0px !important;
 `;
 
-function NavBar() {
-  const navigator = useNavigate();
+function AdminNavBar({ handleChoose }) {
   const [MenuList, setMenuList] = useState(false);
+  const [done, setDone] = useState(null);
+  const dispatch = useDispatch();
+  const navigator = useNavigate();
+  const { data: contentsData } = useQuery('contents', getContentsAPI, {
+    enabled: done === null,
+    refetchOnWindowFocus: false, // react-query는 사용자가 사용하는 윈도우가 다른 곳을 갔다가 다시 화면으로 돌아오면 이 함수를 재실행합니다. 그 재실행 여부 옵션 입니다.
+    retry: 0, // 실페시 재실행 여부
+  });
 
-  const handleAll = () => {
-    navigator('/');
-  };
-  const handleDone = () => {
-    navigator('/solved');
+  const { data: filterDoneContents } = useQuery(
+    ['filterDoneContents', done],
+    () => getfilterContentsAPI({ done }),
+    {
+      enabled: done !== null,
+      refetchOnWindowFocus: false,
+    },
+  );
+
+  const handleUser = () => {
+    navigator('/admin');
   };
 
-  const handleResolving = () => {
-    navigator('/solving');
+  const handlePost = () => {
+    navigator('/admin/post');
   };
+
+  useEffect(() => {
+    if (contentsData) {
+      dispatch({
+        type: LOAD_CONTENTS_SUCCESS,
+        data: contentsData.data.data,
+      });
+    }
+  }, [contentsData]);
 
   return (
     <Menu>
       <ul>
-        <li onClick={handleAll}>
-          <p>전체문제</p>
+        <li onClick={handleUser}>
+          <p>모든유저</p>
         </li>
-        <li onClick={handleResolving}>
-          <p>미해결문제</p>
-        </li>
-        <li onClick={handleDone}>
-          <p>해결된문제</p>
-        </li>
-        <li onClick={() => setMenuList(prev => !prev)}>
-          <p>스택별 문제</p>
-          {MenuList ? <StackMore /> : null}
+        <li onClick={handlePost}>
+          <p>모든게시글</p>
         </li>
       </ul>
       <DividerCustom />
@@ -95,4 +109,4 @@ function NavBar() {
   );
 }
 
-export default NavBar;
+export default AdminNavBar;

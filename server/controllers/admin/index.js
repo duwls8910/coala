@@ -50,23 +50,8 @@ module.exports = {
   },
   delUser: async (req, res) => {
     // 특정 유저 탈퇴
-    const { id } = req.body;
+    const { id } = req.params;
     await users
-      .destroy({
-        where: { id: id },
-      })
-      .then((data) => {
-        res.status(200).send({ message: '요청성공' });
-      })
-      .catch((err) => {
-        console.log(err);
-        res.status(500);
-      });
-  },
-  delPost: async (req, res) => {
-    // 특정 컨텐츠 삭제
-    const { id } = req.body;
-    await posts
       .destroy({
         where: { id: id },
       })
@@ -78,6 +63,20 @@ module.exports = {
         res.status(500);
       });
   },
+  delPost: async (req, res) => {
+    // 특정 컨텐츠 삭제
+    const { id } = req.params;
+    await posts
+      .destroy({
+        where: { id },
+      })
+      .then(() => {
+        res.status(200).send({ message: '요청성공' });
+      })
+      .catch((err) => {
+        console.log(err);
+        res.status(500);
+      });
+  },
 };
 // 어드민 계정 로그인하면 어드민 주소로 보내는 방법
-// 배포상 서버 에러 핸들링 하기

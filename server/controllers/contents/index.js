@@ -33,7 +33,7 @@ module.exports = {
             'in',
           ],
           order: [['id', 'DESC']],
-          limit: 8,
+          limit: 9,
         })
         .then((data) => {
           const post = data.map((el) => el.get({ plain: true }));
@@ -78,7 +78,7 @@ module.exports = {
             'in',
           ],
           order: [['id', 'DESC']],
-          limit: 8,
+          limit: 9,
         })
         .then((data) => {
           const post = data.map((el) => el.get({ plain: true }));
@@ -131,7 +131,7 @@ module.exports = {
               'in',
             ],
             order: [['id', 'DESC']],
-            limit: 8,
+            limit: 9,
           })
           .then((data) => {
             const post = data.map((el) => el.get({ plain: true }));
@@ -182,7 +182,7 @@ module.exports = {
               'in',
             ],
             order: [['id', 'DESC']],
-            limit: 8,
+            limit: 9,
           })
           .then((data) => {
             const post = data.map((el) => el.get({ plain: true }));
@@ -224,9 +224,10 @@ module.exports = {
               'stack',
               'thumbnail',
               'done',
+              'in',
             ],
             order: [['id', 'DESC']],
-            limit: 8,
+            limit: 9,
           })
           .then((data) => {
             const post = data.map((el) => el.get({ plain: true }));
@@ -275,7 +276,7 @@ module.exports = {
               'in',
             ],
             order: [['id', 'DESC']],
-            limit: 8,
+            limit: 9,
           })
           .then((data) => {
             const post = data.map((el) => el.get({ plain: true }));
@@ -324,9 +325,10 @@ module.exports = {
               'stack',
               'thumbnail',
               'done',
+              'in',
             ],
             order: [['id', 'DESC']],
-            limit: 8,
+            limit: 9,
           })
           .then((data) => {
             const post = data.map((el) => el.get({ plain: true }));
@@ -368,9 +370,10 @@ module.exports = {
               'stack',
               'thumbnail',
               'done',
+              'in',
             ],
             order: [['id', 'DESC']],
-            limit: 8,
+            limit: 9,
           })
           .then((data) => {
             const post = data.map((el) => el.get({ plain: true }));
@@ -391,8 +394,9 @@ module.exports = {
     }
   },
   myPost: async (req, res) => {
+    // 해당유저의 작성한 게시글 불러오기
     const verify = isAuthorized(req);
-    console.log(verify);
+    // console.log(verify);
     const { id } = verify;
     if (verify) {
       await posts
