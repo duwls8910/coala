@@ -11,14 +11,15 @@ import Contents from '../components/Contents';
 import Header from '../components/Header';
 import LoadingContents from '../components/LoadingContents';
 import { EDIT_USERINFO_SUCCESS } from '../reducer/user';
-import { LOAD_USERCONTENTS_SUCCESS } from '../reducer/content';
 import SignoutModal from '../components/SignoutModal';
 import { uploadFiles } from '../firebase';
 import { SView } from '../config';
+import { editUserThunk } from '../reducer';
 
 function Mypage() {
   const [info, setInfo] = useState(false);
   const [out, setout] = useState(false);
+  const [myContent, setMycontent] = useState([]);
   const { userInfo } = useSelector(state => state.user);
   const [Image, setImage] = useState(
     userInfo
@@ -33,11 +34,10 @@ function Mypage() {
 
   const editMutation = useMutation(edituserAPI);
   const editPwMutation = useMutation(editpasswordAPI);
-  const { mainContents } = useSelector(state => state.content);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const userRef = useRef();
-
+  console.log(myContent);
   // 유저의 컨텐츠
   const { isLoading, data: contentsData } = useQuery(
     'contents',
@@ -49,10 +49,7 @@ function Mypage() {
   );
   useEffect(() => {
     if (contentsData) {
-      dispatch({
-        type: LOAD_USERCONTENTS_SUCCESS,
-        data: contentsData.data.data,
-      });
+      setMycontent(contentsData.data.data);
     }
   }, [contentsData]);
   useEffect(() => {
@@ -104,11 +101,18 @@ function Mypage() {
 
   useEffect(() => {
     if (editMutation.isSuccess) {
-      dispatch({
-        type: EDIT_USERINFO_SUCCESS,
-        data: editMutation.data.data.data,
-      });
+      dispatch(editUserThunk(editMutation.data.data.data));
       setImage(editMutation.data.data.data.profile);
+
+      setMycontent(
+        myContent.map(content => {
+          if (content.userInfo.id === editMutation.data.data.data.id) {
+            content.userInfo.username = editMutation.data.data.data.username;
+            content.userInfo.profile = editMutation.data.data.data.profile;
+          }
+          return content;
+        }),
+      );
     } else if (editMutation.isError) {
       dispatch({
         type: SET_ERROR_MESSAGE,
@@ -144,11 +148,17 @@ function Mypage() {
       setImage(userInfo.profile);
     }
   };
-  // html focus hook
-  // useEffect(() => {
-  //   console.log('----', inputRef.current, userRef.current);
-  // }, []);
-
+  if (isLoading) {
+    return (
+      <div className="loadingbox">
+        <Header />
+        <div className="loadinglogo">
+          <img className="logo-spin" src="/Coala_logo.png" alt="coala_logo" />
+          ...
+        </div>
+      </div>
+    );
+  }
   if (userInfo) {
     return (
       <>
@@ -260,7 +270,7 @@ function Mypage() {
                 </div>
                 <span className="userinfoId">{userInfo.email}</span>
                 <br />
-                <span className="userText">{`내 게시물 총 ${mainContents.length}개`}</span>
+                <span className="userText">{`내 게시물 총 ${myContent.length}개`}</span>
               </div>
             )}
             <button
@@ -280,14 +290,13 @@ function Mypage() {
         {isLoading ? (
           <LoadingContents />
         ) : (
-          <Contents mainContents={mainContents} />
+          <Contents mainContents={myContent} />
         )}
       </>
     );
   }
   return null;
 }
-
 const MypageWrapper = styled.div`
   background-image: url('https://i.imgur.com/bWzeWI4.jpg');
   background-size: cover;
@@ -452,7 +461,8 @@ const MypageWrapper = styled.div`
   .editPush,
   .edit-pw-submit {
     position: relative;
-    color: grey;
+    font-weight: 500;
+    color: #222222;
     border-radius: 4px;
     background-color: rgba(255, 255, 255, 0.1);
     left: 15px;
@@ -473,13 +483,13 @@ const MypageWrapper = styled.div`
     bottom: 30px;
     right: 30px;
     position: absolute;
-    font-size: 10px;
+    font-size: 11.5px;
     color: red;
     cursor: pointer;
     transition: 0.1s;
   }
   .Withdrawal:hover {
-    font-size: 11px;
+    font-size: 12px;
   }
   .editInfo {
     background-color: rgba(255, 255, 255, 0.1);

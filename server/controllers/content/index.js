@@ -1,4 +1,11 @@
-const { users, posts, like, post_comment, chattings } = require('../../models');
+const {
+  users,
+  posts,
+  like,
+  post_comment,
+  chattings,
+  user_notification,
+} = require('../../models');
 const { isAuthorized } = require('../token');
 
 module.exports = {
@@ -24,7 +31,22 @@ module.exports = {
           .then((data) => {
             res.status(200).send({
               message: 'post is saved',
-              data: { contentId: data.dataValues.id },
+              data: {
+                done: data.dataValues.done,
+                id: data.dataValues.id,
+                userInfo: {
+                  id: verify.id,
+                  username: verify.username,
+                  profile: verify.profile,
+                },
+                title: data.dataValues.title,
+                stack: data.dataValues.stack,
+                thumbnail: data.dataValues.thumbnail,
+                description: data.dataValues.description,
+                updatedAt: data.dataValues.updatedAt,
+                in: data.dataValues.in,
+                likers: [],
+              },
             });
           })
           .catch((err) => {
@@ -128,11 +150,19 @@ module.exports = {
       // const { postId } = req.params;
       const { userId, postId } = req.body;
 
-      if (!postId || !userId) {
-        await like.create({ postId: postId, userId: userId });
-        res.status(200).send({ message: 'post like' });
-      } else {
-        res.status(400).send({ message: 'does not exist postId' });
+      if (postId && userId) {
+        await like
+          .findOrCreate({
+            where: { postId: postId, userId: userId },
+            defaults: {},
+          })
+          .then(([result, created]) => {
+            if (!created) {
+              res.status(400).send({ message: 'does not exist postId' });
+            } else {
+              res.status(200).send({ message: 'post like' });
+            }
+          });
       }
     } else {
       res.status(401).send({ message: 'Invalid Token' });
@@ -145,7 +175,7 @@ module.exports = {
       // const { postId } = req.params;
       const { userId, postId } = req.body;
 
-      if (!postId || !userId) {
+      if (postId && userId) {
         await like.destroy({ where: { postId: postId, userId: userId } });
         res.status(200).send({ message: 'post unlike' });
       } else {
@@ -227,7 +257,7 @@ module.exports = {
     // 댓글 작성
     const verify = isAuthorized(req);
     if (verify) {
-      const { userId, comment, postId } = req.body;
+      const { userId, comment, postId, postUserId, postTitle } = req.body;
       if (!postId || !comment || !userId) {
         res.status(400).send({ message: 'Invalid request' });
       } else {
@@ -237,7 +267,15 @@ module.exports = {
             comment,
             postId,
           })
-          .then((data) => {
+          .then(async (data) => {
+            // 코멘트 알림 추가
+            await user_notification.create({
+              userId: userId,
+              postUserId,
+              type: 'comment',
+              title: postTitle,
+              postId: postId,
+            });
             res.status(200).send({
               message: 'comment is saved',
               data: {

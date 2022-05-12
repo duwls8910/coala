@@ -14,6 +14,8 @@ import Post from './pages/Post';
 import Mypage from './pages/Mypage';
 import ContentDetail from './pages/ContentDetail';
 import AlertModal from './components/AlertModal';
+import AdminUserInfo from './components/AdminUserInfo';
+import AdminPost from './components/AdminPost';
 import { INIT_SOCKETIO } from './reducer/chat';
 import { getuserAPI, githubLoginAPI } from './api/user';
 import { LOG_IN_SUCCESS } from './reducer/user';
@@ -21,6 +23,7 @@ import { SET_ERROR_MESSAGE } from './reducer/modal';
 import SolvingHome from './pages/SolvingHome';
 import SolvedHome from './pages/SolvedHome';
 import StackHome from './pages/StackHome';
+import SearchHome from './pages/SearchHome';
 
 const socket = io.connect(process.env.REACT_APP_AXIOS_BASE_URL, {
   transports: ['websocket'],
@@ -49,6 +52,13 @@ function App() {
       data: socket,
     });
   }, [socket]);
+
+  useEffect(() => {
+    socket.on(`send_join`, data => {
+      console.log(`send_join${data}`);
+    });
+  }, [socket]);
+
   useEffect(() => {
     if (isSuccess) {
       dispatch({
@@ -102,9 +112,11 @@ function App() {
         <Route path="/solving" element={<SolvingHome />} />
         <Route path="/solved" element={<SolvedHome />} />
         <Route path="/stack/:stack" element={<StackHome />} />
+        <Route path="/search/:keyword" element={<SearchHome />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/post" element={<AdminPost />} />
         <Route path="/mypage" element={<Mypage />} />
         <Route path="/write" element={<Post />} />
         <Route path="/edit" element={<Post isEdit={editContent} />} />
