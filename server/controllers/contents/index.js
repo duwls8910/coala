@@ -25,10 +25,10 @@ module.exports = {
           attributes: [
             'id',
             'title',
+            'thumbnail',
             'description',
             'updatedAt',
             'stack',
-            'thumbnail',
             'done',
             'in',
           ],
@@ -70,10 +70,10 @@ module.exports = {
           attributes: [
             'id',
             'title',
+            'thumbnail',
             'description',
             'updatedAt',
             'stack',
-            'thumbnail',
             'done',
             'in',
           ],
@@ -442,7 +442,7 @@ module.exports = {
           res.status(500);
         });
     } else {
-      res.ststus(400).send({ message: 'Invalid Token' });
+      res.ststus(401).send({ message: 'Invalid Token' });
     }
   },
 };
