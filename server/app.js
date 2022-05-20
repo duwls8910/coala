@@ -15,7 +15,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(
   cors({
-    origin: ['http://localhost:3000'],
+    origin: ['https://coala.ml'],
     credentials: true,
     methods: ['GET', 'POST', 'OPTIONS', 'PATCH', 'DELETE'],
   }),
@@ -41,7 +41,7 @@ module.exports = app;
 
 const http = require('http');
 const server = http.createServer(app);
-const port = 4000;
+const port = 8080;
 
 const socketIO = require('socket.io');
 const io = socketIO(server, {
